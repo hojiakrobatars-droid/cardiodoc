@@ -1,656 +1,805 @@
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>CardioDoc Lite — Telegram</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { height: 100%; width: 100%; }
-    body {
-      background: #0a0e19;
-      color: #e8eef7;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif;
-      line-height: 1.5;
-    }
-    #root { height: 100%; display: flex; flex-direction: column; }
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#0d1420">
+<title>CardioDoc Lite</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
+html,body{background:#0d1420}
+body{
+  color:#dfe7f2;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  min-height:100vh;
+}
+#app{padding:12px 12px 60px;max-width:560px;margin:0 auto}
+button{font-family:inherit}
+.top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 2px 14px}
+.brand{font-size:18px;font-weight:700;letter-spacing:.2px}
+.brand .lite{color:#39d98a;font-weight:600}
+.counters{display:flex;gap:6px}
+.chip{border:1px solid #2a3a55;background:#141d2e;color:#aebcd2;border-radius:999px;
+  padding:6px 12px;font-size:13px;cursor:pointer}
+.chip.on{background:#1e3050;color:#fff;border-color:#3d5aa5}
+.chip.red{color:#ff9a8a;border-color:#4a2a2a}
+.chip.red.on{background:#3a1c1c;color:#ffb3a6;border-color:#7a3a34}
+.chip:disabled{opacity:.45;cursor:default}
+.chip.mini{padding:5px 10px;font-size:12.5px}
+.list{display:flex;flex-direction:column;gap:12px}
+.card{background:#141d2e;border:1px solid #22304a;border-radius:14px;padding:12px}
+.card.has-urgent{border-color:#7a3a34}
+.card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.card-title{display:flex;flex-direction:column;gap:2px;min-width:0}
+.fio{font-size:15.5px;font-weight:700;line-height:1.25;overflow-wrap:anywhere}
+.meta{font-size:12.5px;color:#8fa0ba}
+.card-badges{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.badge{min-width:22px;height:22px;border-radius:999px;background:#1e3050;color:#bcd0ee;
+  display:inline-flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:700;padding:0 7px}
+.badge.urgent{background:#4a1f1c;color:#ffb3a6}
+.dots{border:none;background:transparent;color:#8fa0ba;font-size:20px;line-height:1;cursor:pointer;padding:2px 6px;border-radius:8px}
+.dots:active{background:#1a2438}
+.card-menu{display:flex;flex-direction:column;gap:8px;margin:10px 0 2px}
+.card-menu input{width:100%}
 
-    /* ============ LAYOUT ============ */
-    .app-header {
-      background: #0f1420;
-      border-bottom: 1px solid #1a2540;
-      padding: 12px 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-shrink: 0;
-    }
-    .app-header h1 { font-size: 18px; font-weight: 600; }
-    .app-header .actions { display: flex; gap: 8px; }
+.vit-wrap{margin:10px 0}
+.vitals-box{cursor:pointer;background:#0b111c;border:1px solid #1d2a40;border-radius:10px;padding:8px 10px}
+.vitals{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr auto;gap:6px;align-items:stretch}
+.vitals.second{grid-template-columns:repeat(auto-fill,minmax(64px,1fr));margin-top:8px;padding-top:8px;border-top:1px dashed #1d2a40}
+.vit{display:flex;flex-direction:column;gap:1px;min-width:0}
+.vit-label{font-size:10.5px;color:#6d7f9b;letter-spacing:.4px;text-transform:uppercase}
+.vit-val{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:16.5px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.vit.bp .vit-val{color:#ff7b6b}
+.vit.hr .vit-val{color:#39d98a}
+.vit.rr .vit-val{color:#e8eef7}
+.vit.spo2 .vit-val{color:#4fc3f7}
+.vit.ex .vit-val{color:#c9b8ff;font-size:14.5px}
+.vit.alert .vit-val{color:#ffdf6b;text-shadow:0 0 8px rgba(255,150,60,.35);animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+@media (prefers-reduced-motion:reduce){.vit.alert .vit-val{animation:none}}
+.vit-time{align-self:flex-end;font-size:10.5px;color:#6d7f9b;padding-left:2px;white-space:nowrap}
 
-    .app-content {
-      flex: 1;
-      overflow-y: auto;
-      padding: 12px 16px;
-      -webkit-overflow-scrolling: touch;
-    }
+.vit-edit{background:#0b111c;border:1px solid #1d2a40;border-radius:10px;padding:10px;margin:10px 0}
+.vit-edit-grid{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:8px}
+.vit-edit-grid.extra{grid-template-columns:repeat(3,1fr);margin-top:10px}
+.vit-edit-grid label{display:flex;flex-direction:column;gap:4px;font-size:11px;color:#8fa0ba}
+.vit-edit-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:10px}
+.bp-pair{display:flex;align-items:center;gap:3px}
+.bp-pair input{min-width:0;padding:8px 6px;text-align:center}
+.bp-slash{color:#5a6b86;font-weight:700}
+.param-head{display:flex;align-items:center;justify-content:space-between;gap:4px}
+.param-x{border:none;background:transparent;color:#5a6b86;font-size:14px;line-height:1;cursor:pointer;padding:0 3px;border-radius:5px}
+.param-x:active{color:#ff9a8a}
+.param-add{display:flex;gap:6px;margin-top:8px}
+.param-add input{flex:1;font-size:13.5px}
 
-    .tabs {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 12px;
-      background: #0f1420;
-      padding: 8px;
-      border-radius: 10px;
-    }
-    .tab {
-      flex: 1;
-      padding: 10px;
-      border: none;
-      background: #1a2540;
-      color: #8fa0ba;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: 500;
-    }
-    .tab.active { background: #2f6df6; color: #fff; }
+.dyn-toggle{border:none;background:transparent;color:#6d7f9b;font-size:12px;cursor:pointer;padding:5px 4px 0;display:block}
+.dyn{margin-top:6px;background:#0b111c;border:1px solid #1d2a40;border-radius:10px;padding:8px 10px;max-height:260px;overflow-y:auto}
+.dyn-empty{color:#5a6b86;font-size:12.5px;line-height:1.45;padding:4px 0}
+.dyn-date{color:#8fa0ba;font-size:11px;letter-spacing:.4px;text-transform:uppercase;padding:6px 0 3px;border-bottom:1px dashed #1d2a40;margin-bottom:3px}
+.dyn-row{display:grid;grid-template-columns:auto 1.3fr 1fr .8fr .9fr auto;gap:8px;align-items:center;
+  padding:4px 0;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;font-variant-numeric:tabular-nums}
+.dyn-t{color:#6d7f9b;font-size:11.5px}
+.dyn-v{white-space:nowrap}
+.dyn-v.bp{color:#ff9d8f}.dyn-v.hr{color:#57dd9c}.dyn-v.rr{color:#cfd9e8}.dyn-v.spo2{color:#6fcdf9}
+.dyn-v.al{color:#ffdf6b;font-weight:700}
+.dyn-x{border:none;background:transparent;color:#3d4f6e;font-size:14px;line-height:1;cursor:pointer;padding:0 2px;justify-self:end}
+.dyn-x:active{color:#ff9a8a}
+.dyn-extra{grid-column:2/-1;color:#b1a3e8;font-size:11.5px;font-family:inherit;padding-bottom:2px;overflow-wrap:anywhere}
 
-    /* ============ PATIENTS ============ */
-    .patient-card {
-      background: #1a2438;
-      border-radius: 12px;
-      padding: 14px;
-      margin-bottom: 10px;
-      border-left: 3px solid #2f6df6;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    .patient-card:active { background: #222d3f; }
-    .patient-card.selected { background: #1f3050; border-left-color: #39d98a; }
+.inf-block{margin:0 0 10px}
+.sec-head{display:flex;align-items:center;justify-content:space-between;padding:0 2px 4px}
+.sec-title{font-size:11.5px;color:#6d7f9b;letter-spacing:.5px;text-transform:uppercase}
+.sec-add{border:none;background:transparent;color:#6d7f9b;font-size:17px;font-weight:700;cursor:pointer;padding:0 6px;line-height:1}
+.inf-pills{display:flex;flex-wrap:wrap;gap:6px}
+.inf-pill{display:inline-flex;align-items:center;gap:6px;background:#0f2233;border:1px solid #1f3d57;color:#8fd4ff;
+  border-radius:999px;padding:5px 6px 5px 11px;font-size:13px;font-variant-numeric:tabular-nums}
+.inf-pill b{font-weight:700}
+.pill-x{border:none;background:#16324a;color:#8fd4ff;width:18px;height:18px;border-radius:50%;font-size:12px;line-height:1;
+  cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0}
+.inf-add{margin-top:8px;display:flex;flex-direction:column;gap:8px}
+.inf-chips{display:flex;flex-wrap:wrap;gap:5px}
+.inf-add-row{display:flex;gap:6px}
+.inf-add-row input:first-child{flex:1.2}
+.inf-add-row input:nth-child(2){flex:1}
 
-    .patient-name { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
-    .patient-info { font-size: 12px; color: #8fa0ba; line-height: 1.6; }
-    .patient-info span { display: block; }
+.note-empty{border:none;background:transparent;color:#5a6b86;font-size:12.5px;cursor:pointer;padding:2px 2px 10px;text-align:left;display:block}
+.note{display:flex;gap:8px;align-items:flex-start;cursor:pointer;background:#1b2233;border-left:3px solid #c9b447;border-radius:8px;
+  padding:8px 10px;margin:0 0 10px}
+.note-mark{color:#c9b447;font-size:13px;flex-shrink:0}
+.note-text{font-size:13.5px;line-height:1.4;color:#d5ddea;white-space:pre-wrap;overflow-wrap:anywhere}
+.note-edit{margin:0 0 10px}
 
-    .btn {
-      border: none;
-      border-radius: 10px;
-      padding: 9px 16px;
-      font-size: 14.5px;
-      font-weight: 600;
-      cursor: pointer;
-      background: #1e3050;
-      color: #dfe7f2;
-    }
-    .btn.primary { background: #2f6df6; color: #fff; }
-    .btn.small { padding: 8px 14px; font-size: 14px; }
-    .btn.ghost { background: transparent; border: 1px solid #2a3a55; color: #aebcd2; }
+input,textarea{background:#101828;border:1px solid #2a3a55;border-radius:8px;color:#e8eef7;
+  padding:8px 10px;font-size:15px;width:100%;outline:none}
+input:focus,textarea:focus{border-color:#3d5aa5}
+input::placeholder,textarea::placeholder{color:#5a6b86}
+textarea{resize:vertical;font-family:inherit;line-height:1.4;font-size:14.5px}
 
-    /* ============ VITALS BLOCK ============ */
-    .vitals-section { margin-bottom: 14px; }
-    .vitals-section-title { font-size: 11px; color: #6d7f9b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; padding: 0 2px; }
+.tasks{display:flex;flex-direction:column;gap:6px}
+.task{display:flex;align-items:center;gap:10px;background:#1a2438;border-radius:10px;padding:9px 10px}
+.task.urgent{background:#2b1a1a;box-shadow:inset 3px 0 0 #e0564a}
+.task.done{opacity:.55;background:transparent;padding:5px 10px}
+.task.done .task-title{text-decoration:line-through}
+.task-check{width:22px;height:22px;border-radius:7px;border:2px solid #4a5d7d;background:transparent;flex-shrink:0;cursor:pointer;padding:0}
+.task-check.on{background:#39d98a;border-color:#39d98a}
+.task-title{flex:1;font-size:14.5px;line-height:1.35;cursor:pointer;overflow-wrap:anywhere}
+.task-pri{width:26px;height:26px;border-radius:8px;border:1px solid #3a4a68;background:transparent;color:#6d7f9b;
+  font-weight:800;font-size:14px;cursor:pointer;flex-shrink:0}
+.task-pri.on{background:#e0564a;border-color:#e0564a;color:#fff}
+.task-add{display:flex;gap:8px;margin-top:2px}
+.task-add input{flex:1;font-size:14.5px;padding:8px 10px}
+.task-done-block{margin-top:4px;display:flex;flex-direction:column;gap:4px}
+.task-done-toggle{border:none;background:transparent;color:#6d7f9b;font-size:12.5px;text-align:left;cursor:pointer;padding:4px 2px}
 
-    .vitals {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 8px;
-      background: #0b111c;
-      border: 1px solid #1d2a40;
-      border-radius: 10px;
-      padding: 8px 10px;
-      margin-bottom: 8px;
-    }
-    .vitals.single-row { grid-template-columns: 1fr; }
+.btn{border:none;border-radius:10px;padding:9px 16px;font-size:14.5px;font-weight:600;cursor:pointer;background:#1e3050;color:#dfe7f2}
+.btn.primary{background:#2f6df6;color:#fff}
+.btn.ghost{background:transparent;border:1px solid #2a3a55;color:#aebcd2}
+.btn.danger{background:#4a1f1c;color:#ffb3a6}
+.btn.small{padding:8px 14px;font-size:16px;font-weight:800;flex-shrink:0}
+.btn.tiny{padding:7px 10px;font-size:13px;align-self:flex-start}
+.btn.add-patient{margin-top:4px;padding:13px;font-size:15px;background:transparent;border:1.5px dashed #2f4260;color:#8fa0ba;border-radius:14px;width:100%}
+.btn.add-patient:active{background:#141d2e}
+.new-form{display:flex;flex-direction:column;gap:8px}
+.empty{text-align:center;color:#6d7f9b;padding:36px 12px;font-size:14.5px;line-height:1.5}
 
-    .vit {
-      display: flex;
-      flex-direction: column;
-      padding: 6px;
-      border-radius: 8px;
-    }
-    .vit.alert .vit-val { color: #ffdf6b; font-weight: 700; animation: pulse 1.6s ease-in-out infinite; }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+.sync{background:#141d2e;border:1px solid #22304a;border-radius:14px;padding:12px;margin-bottom:12px;display:flex;flex-direction:column;gap:10px}
+.sync-head{display:flex;align-items:center;justify-content:space-between}
+.sync-btns{display:flex;gap:8px;flex-wrap:wrap}
+.sync-msg{color:#57dd9c;font-size:13px}
+.sync-hint{color:#6d7f9b;font-size:12px;line-height:1.5}
+.banner{border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:13px;line-height:1.45}
+.banner.warn{background:#3a2a12;border:1px solid #6b4d1e;color:#ffd694}
+.storage-tag{font-size:10.5px;color:#5a6b86;text-align:center;padding-top:16px}
 
-    .vit-label { font-size: 11px; color: #8fa0ba; margin-bottom: 3px; }
-    .vit-val {
-      font-family: ui-monospace, "Menlo", monospace;
-      font-size: 16.5px;
-      font-weight: 700;
-      font-variant-numeric: tabular-nums;
-    }
-    .vit.bp .vit-val { color: #ff7b6b; }
-    .vit.hr .vit-val { color: #39d98a; }
-    .vit.rr .vit-val { color: #e8eef7; }
-    .vit.spo2 .vit-val { color: #4fc3f7; }
-
-    .vit-edit-grid {
-      display: grid;
-      grid-template-columns: 1.6fr 1fr 1fr 1fr;
-      gap: 8px;
-      background: #0b111c;
-      border: 1px solid #1d2a40;
-      border-radius: 10px;
-      padding: 10px;
-      margin-bottom: 10px;
-    }
-    @media (max-width: 480px) {
-      .vit-edit-grid { grid-template-columns: 1fr 1fr; }
-    }
-
-    .bp-pair { display: flex; align-items: center; gap: 3px; }
-    .bp-slash { color: #5a6b86; font-weight: 700; }
-
-    input, textarea {
-      background: #101828;
-      border: 1px solid #2a3a55;
-      border-radius: 8px;
-      color: #e8eef7;
-      padding: 8px 10px;
-      font-size: 14px;
-      outline: none;
-      font-family: inherit;
-    }
-    input:focus, textarea:focus { border-color: #3d5aa5; }
-    input::placeholder, textarea::placeholder { color: #5a6b86; }
-
-    label { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: #8fa0ba; }
-
-    .vit-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
-
-    /* ============ TASKS ============ */
-    .tasks { display: flex; flex-direction: column; gap: 6px; }
-    .task {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: #1a2438;
-      border-radius: 10px;
-      padding: 9px 10px;
-    }
-    .task.urgent { background: #2b1a1a; box-shadow: inset 3px 0 0 #e0564a; }
-    .task.done { opacity: 0.55; background: transparent; }
-    .task.done .task-title { text-decoration: line-through; }
-
-    .task-check {
-      width: 22px;
-      height: 22px;
-      border-radius: 7px;
-      border: 2px solid #4a5d7d;
-      background: transparent;
-      flex-shrink: 0;
-      cursor: pointer;
-    }
-    .task-check.on { background: #39d98a; border-color: #39d98a; }
-
-    .task-title { flex: 1; font-size: 14px; line-height: 1.35; cursor: pointer; }
-    .task-pri {
-      width: 26px;
-      height: 26px;
-      border-radius: 8px;
-      border: 1px solid #3a4a68;
-      background: transparent;
-      color: #6d7f9b;
-      font-weight: 800;
-      cursor: pointer;
-      flex-shrink: 0;
-    }
-    .task-pri.on { background: #e0564a; border-color: #e0564a; color: #fff; }
-
-    .task-add { display: flex; gap: 8px; margin-top: 8px; }
-    .task-add input { flex: 1; }
-
-    /* ============ TOAST ============ */
-    .toast {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #1e3a2a;
-      border: 1px solid #2f6b45;
-      color: #a9f0c4;
-      border-radius: 999px;
-      padding: 10px 18px;
-      font-size: 13px;
-      z-index: 100;
-      max-width: 90vw;
-    }
-    .toast.err { background: #3a1c1c; border-color: #7a3a34; color: #ffb3a6; }
-
-    .empty { text-align: center; color: #6d7f9b; padding: 24px 12px; font-size: 14px; }
-
-    /* ============ SYNC STATUS ============ */
-    .sync-status {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 3px;
-      background: #2f6df6;
-      animation: sync-slide 0.6s ease-in-out;
-      z-index: 200;
-    }
-    @keyframes sync-slide { from { width: 0; } to { width: 100%; } }
-  </style>
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);
+  background:#1e3a2a;border:1px solid #2f6b45;color:#a9f0c4;border-radius:999px;padding:9px 18px;font-size:13.5px;z-index:50;
+  box-shadow:0 6px 20px rgba(0,0,0,.45);white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
+.toast.err{background:#3a1c1c;border-color:#7a3a34;color:#ffb3a6}
+</style>
 </head>
 <body>
-  <div id="root"></div>
+<div id="app"><div class="empty">Загрузка…</div></div>
+<div id="toast-slot"></div>
 
-  <script>
-    /* ============================================================
-       CardioDoc Lite — Telegram Mini App Version
-       Хранилище: Telegram CloudStorage
-       ============================================================ */
+<script>
+"use strict";
 
-    // Инициализация Telegram Web App
-    const tg = window.Telegram.WebApp;
-    tg.ready();
-    tg.setHeaderColor("#0f1420");
-    tg.setBackgroundColor("#0a0e19");
+/* ================= Telegram ================= */
+const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+if (tg) { try { tg.ready(); tg.expand(); tg.setHeaderColor("#0d1420"); tg.setBackgroundColor("#0d1420"); } catch (e) {} }
 
-    // ============ STORAGE WRAPPER ============
-    const st = {
-      async get(k) {
-        try {
-          const val = await tg.CloudStorage.getItem(k);
-          return val;
-        } catch (e) {
-          console.warn("CloudStorage get error:", e);
-          return null;
-        }
-      },
-      async set(k, v) {
-        try {
-          await tg.CloudStorage.setItem(k, v);
-          return true;
-        } catch (e) {
-          console.warn("CloudStorage set error:", e);
-          return false;
-        }
-      },
-      async list(prefix) {
-        try {
-          const keys = await tg.CloudStorage.getKeys();
-          return keys.filter(k => k.startsWith(prefix));
-        } catch (e) {
-          console.warn("CloudStorage list error:", e);
-          return [];
-        }
-      },
-    };
+function ask(msg) {
+  return new Promise((res) => {
+    if (tg && typeof tg.showConfirm === "function" && tg.isVersionAtLeast && tg.isVersionAtLeast("6.2")) {
+      try { tg.showConfirm(msg, (ok) => res(!!ok)); return; } catch (e) {}
+    }
+    res(window.confirm(msg));
+  });
+}
 
-    // ============ UTILITIES ============
-    const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-    const todayKey = () => {
-      const d = new Date();
-      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-    };
-    const nowTime = () => {
-      const d = new Date();
-      return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-    };
+/* ================= Хранилище =================
+   В Telegram — CloudStorage (синхронизируется между устройствами через аккаунт TG).
+   В обычном браузере — localStorage.
+   Значения >1900 символов режутся на части (лимит CloudStorage — 4096 байт). */
+const CHUNK = 1900;
 
-    const vitalAlert = (v) => {
-      if (!v) return {};
-      const hr = parseFloat(v.hr);
-      const rr = parseFloat(v.rr);
-      const spo2 = parseFloat(v.spo2);
-      let sys = NaN;
-      if (v.bp) {
-        const m = String(v.bp).match(/(\d+)/);
-        if (m) sys = parseFloat(m[1]);
+const cloudRaw = {
+  get: (k) => new Promise((res) => { try { tg.CloudStorage.getItem(k, (e, v) => res(e ? null : (v || null))); } catch (err) { res(null); } }),
+  set: (k, v) => new Promise((res) => { try { tg.CloudStorage.setItem(k, v, (e, ok) => res(!e && !!ok)); } catch (err) { res(false); } }),
+  del: (k) => new Promise((res) => { try { tg.CloudStorage.removeItem(k, () => res(true)); } catch (err) { res(false); } }),
+  keys: () => new Promise((res) => { try { tg.CloudStorage.getKeys((e, ks) => res(e ? [] : (ks || []))); } catch (err) { res([]); } }),
+};
+const localRaw = {
+  get: async (k) => { try { const v = localStorage.getItem(k); return v === null ? null : v; } catch (e) { return null; } },
+  set: async (k, v) => { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } },
+  del: async (k) => { try { localStorage.removeItem(k); return true; } catch (e) { return false; } },
+  keys: async () => { try { return Object.keys(localStorage); } catch (e) { return []; } },
+};
+
+let backend = localRaw;
+let backendName = "браузер (localStorage)";
+let chunking = false;
+
+const st = {
+  onFail: null,
+  async get(key) {
+    const head = await backend.get(key);
+    if (head === null) return null;
+    if (chunking && head.startsWith("@C:")) {
+      const n = parseInt(head.slice(3), 10) || 0;
+      let out = "";
+      for (let i = 0; i < n; i++) {
+        const part = await backend.get(key + "@" + i);
+        if (part === null) return null;
+        out += part;
       }
-      return {
-        bp: !isNaN(sys) && (sys < 90 || sys > 180),
-        hr: !isNaN(hr) && (hr < 45 || hr > 120),
-        rr: !isNaN(rr) && (rr > 24 || rr < 8),
-        spo2: !isNaN(spo2) && spo2 < 90,
-      };
-    };
-
-    // ============ STATE & RENDERING ============
-    let state = {
-      patients: [],
-      tasks: [],
-      selected: null,
-      tab: "patients", // patients | tasks
-      showVitEdit: false,
-      vitForm: { sys: "", dia: "", hr: "", rr: "", spo2: "", extra: {} },
-      newTaskText: "",
-      toasts: [],
-    };
-
-    function showToast(msg, isErr = false) {
-      const id = uid();
-      state.toasts.push({ id, msg, isErr });
-      render();
-      setTimeout(() => {
-        state.toasts = state.toasts.filter(t => t.id !== id);
-        render();
-      }, 2500);
+      return out;
     }
-
-    async function loadData() {
-      const [patsRaw, tasksRaw] = await Promise.all([
-        st.get("patients"),
-        st.get("tasks"),
-      ]);
-      try {
-        state.patients = patsRaw ? JSON.parse(patsRaw) : [];
-      } catch { state.patients = []; }
-      try {
-        state.tasks = tasksRaw ? JSON.parse(tasksRaw) : [];
-      } catch { state.tasks = []; }
-      render();
-    }
-
-    async function savePatients() {
-      const ok = await st.set("patients", JSON.stringify(state.patients));
-      if (!ok) showToast("Ошибка сохранения", true);
-    }
-
-    async function saveTasks() {
-      const ok = await st.set("tasks", JSON.stringify(state.tasks));
-      if (!ok) showToast("Ошибка сохранения", true);
-    }
-
-    function addPatient() {
-      const name = prompt("ФИО пациента:");
-      if (!name) return;
-      const p = {
-        id: uid(),
-        name: name.trim(),
-        vitals: null,
-        notes: "",
-        infusions: [],
-      };
-      state.patients.push(p);
-      state.selected = p.id;
-      savePatients();
-      showToast("Пациент добавлен");
-      render();
-    }
-
-    function selectPatient(id) {
-      state.selected = id;
-      state.showVitEdit = false;
-      state.tab = "patients";
-      render();
-    }
-
-    function updatePatientVitals() {
-      const pat = state.patients.find(p => p.id === state.selected);
-      if (!pat) return;
-
-      const sys = state.vitForm.sys.trim();
-      const dia = state.vitForm.dia.trim();
-      const bp = sys || dia ? `${sys}${dia ? "/" + dia : ""}` : "";
-
-      pat.vitals = {
-        bp: bp,
-        hr: state.vitForm.hr.trim(),
-        rr: state.vitForm.rr.trim(),
-        spo2: state.vitForm.spo2.trim(),
-        at: nowTime(),
-      };
-
-      savePatients();
-      state.showVitEdit = false;
-      showToast("Витальные сохранены");
-      render();
-    }
-
-    function openVitEdit() {
-      const pat = state.patients.find(p => p.id === state.selected);
-      if (!pat) return;
-
-      const v = pat.vitals || {};
-      const [sys, dia] = (v.bp || "").split("/");
-
-      state.vitForm = {
-        sys: sys || "",
-        dia: dia || "",
-        hr: v.hr || "",
-        rr: v.rr || "",
-        spo2: v.spo2 || "",
-        extra: {},
-      };
-      state.showVitEdit = true;
-      render();
-    }
-
-    function addTask() {
-      if (!state.newTaskText.trim()) return;
-      const t = {
-        id: uid(),
-        text: state.newTaskText.trim(),
-        done: false,
-        urgent: false,
-        patientId: state.selected || null,
-      };
-      state.tasks.push(t);
-      state.newTaskText = "";
-      saveTasks();
-      showToast("Задача добавлена");
-      render();
-    }
-
-    function toggleTask(id) {
-      const t = state.tasks.find(x => x.id === id);
-      if (t) t.done = !t.done;
-      saveTasks();
-      render();
-    }
-
-    function toggleTaskUrgent(id) {
-      const t = state.tasks.find(x => x.id === id);
-      if (t) t.urgent = !t.urgent;
-      saveTasks();
-      render();
-    }
-
-    function deleteTask(id) {
-      state.tasks = state.tasks.filter(x => x.id !== id);
-      saveTasks();
-      render();
-    }
-
-    function render() {
-      const root = document.getElementById("root");
-      const pat = state.patients.find(p => p.id === state.selected);
-
-      root.innerHTML = `
-        <div class="app-header">
-          <h1>CardioDoc Lite</h1>
-          <div class="actions">
-            <button class="btn small ghost" onclick="app.switchTab('patients')">Пациенты</button>
-            <button class="btn small ghost" onclick="app.switchTab('tasks')">Задачи</button>
-          </div>
-        </div>
-
-        <div class="app-content">
-          ${state.tab === "patients" ? renderPatients() : renderTasks()}
-          ${state.toasts.map(t => `<div class="toast ${t.isErr ? 'err' : ''}">${t.msg}</div>`).join("")}
-        </div>
-      `;
-    }
-
-    function renderPatients() {
-      if (!state.patients.length) {
-        return `
-          <div class="empty">
-            <p>Пациентов нет</p>
-            <button class="btn primary" onclick="app.addPatient()" style="margin-top: 12px;">Добавить пациента</button>
-          </div>
-        `;
+    return head;
+  },
+  async set(key, val) {
+    let ok;
+    if (chunking && val.length > CHUNK) {
+      const old = await backend.get(key);
+      const oldN = old && old.startsWith("@C:") ? parseInt(old.slice(3), 10) || 0 : 0;
+      const n = Math.ceil(val.length / CHUNK);
+      ok = true;
+      for (let i = 0; i < n; i++) {
+        ok = (await backend.set(key + "@" + i, val.slice(i * CHUNK, (i + 1) * CHUNK))) && ok;
       }
-
-      const pat = state.patients.find(p => p.id === state.selected);
-
-      if (!pat) {
-        return `
-          <div>
-            ${state.patients.map(p => `
-              <div class="patient-card" onclick="app.selectPatient('${p.id}')">
-                <div class="patient-name">${p.name}</div>
-                <div class="patient-info">
-                  ${p.vitals ? `
-                    <span>АД: ${p.vitals.bp || "—"} | ЧСС: ${p.vitals.hr || "—"}</span>
-                    <span>ЧД: ${p.vitals.rr || "—"} | SpO₂: ${p.vitals.spo2 || "—"}%</span>
-                  ` : `<span>Нет данных</span>`}
-                </div>
-              </div>
-            `).join("")}
-            <button class="btn primary" onclick="app.addPatient()" style="margin-top: 12px; width: 100%;">+ Добавить пациента</button>
-          </div>
-        `;
+      ok = (await backend.set(key, "@C:" + n)) && ok;
+      for (let i = n; i < oldN; i++) await backend.del(key + "@" + i);
+    } else {
+      const old = chunking ? await backend.get(key) : null;
+      ok = await backend.set(key, val);
+      if (chunking && old && old.startsWith("@C:")) {
+        const oldN = parseInt(old.slice(3), 10) || 0;
+        for (let i = 0; i < oldN; i++) await backend.del(key + "@" + i);
       }
-
-      const v = pat.vitals || {};
-      const al = vitalAlert(v);
-
-      return `
-        <div>
-          <div class="patient-card" style="cursor: default;">
-            <div class="patient-name">${pat.name}</div>
-            <button class="btn ghost" onclick="app.selectPatient(null)" style="margin-top: 8px; width: 100%;">← Назад</button>
-          </div>
-
-          <div class="vitals-section">
-            <div class="vitals-section-title">Витальные показатели</div>
-            <div class="vitals">
-              <div class="vit bp ${al.bp ? 'alert' : ''}">
-                <div class="vit-label">АД</div>
-                <div class="vit-val">${v.bp || "—"}</div>
-              </div>
-              <div class="vit hr ${al.hr ? 'alert' : ''}">
-                <div class="vit-label">ЧСС</div>
-                <div class="vit-val">${v.hr || "—"}</div>
-              </div>
-              <div class="vit rr ${al.rr ? 'alert' : ''}">
-                <div class="vit-label">ЧД</div>
-                <div class="vit-val">${v.rr || "—"}</div>
-              </div>
-              <div class="vit spo2 ${al.spo2 ? 'alert' : ''}">
-                <div class="vit-label">SpO₂</div>
-                <div class="vit-val">${v.spo2 || "—"}%</div>
-              </div>
-            </div>
-            ${!state.showVitEdit ? `
-              <button class="btn primary" onclick="app.openVitEdit()" style="width: 100%; margin-top: 8px;">Обновить витальные</button>
-            ` : `
-              <div class="vit-edit-grid">
-                <label>
-                  АД
-                  <div class="bp-pair">
-                    <input type="number" placeholder="120" value="${state.vitForm.sys}" 
-                      onchange="app.setVitForm('sys', this.value)">
-                    <span class="bp-slash">/</span>
-                    <input type="number" placeholder="80" value="${state.vitForm.dia}"
-                      onchange="app.setVitForm('dia', this.value)">
-                  </div>
-                </label>
-                <label>
-                  ЧСС
-                  <input type="number" placeholder="72" value="${state.vitForm.hr}"
-                    onchange="app.setVitForm('hr', this.value)">
-                </label>
-                <label>
-                  ЧД
-                  <input type="number" placeholder="16" value="${state.vitForm.rr}"
-                    onchange="app.setVitForm('rr', this.value)">
-                </label>
-                <label>
-                  SpO₂
-                  <input type="number" placeholder="97" value="${state.vitForm.spo2}"
-                    onchange="app.setVitForm('spo2', this.value)">
-                </label>
-              </div>
-              <div class="vit-actions">
-                <button class="btn ghost" onclick="app.cancelVitEdit()">Отмена</button>
-                <button class="btn primary" onclick="app.updatePatientVitals()">Сохранить</button>
-              </div>
-            `}
-          </div>
-        </div>
-      `;
     }
-
-    function renderTasks() {
-      const patientTasks = state.tasks.filter(t => !t.patientId || t.patientId === state.selected);
-      const doneTasks = patientTasks.filter(t => t.done);
-      const activeTasks = patientTasks.filter(t => !t.done);
-
-      return `
-        <div class="tasks">
-          ${activeTasks.map(t => `
-            <div class="task ${t.urgent ? 'urgent' : ''}">
-              <input type="checkbox" class="task-check" ${t.done ? 'checked' : ''}
-                onchange="app.toggleTask('${t.id}')">
-              <div class="task-title">${t.text}</div>
-              <button class="task-pri ${t.urgent ? 'on' : ''}" onclick="app.toggleTaskUrgent('${t.id}')">!</button>
-              <button class="btn ghost" onclick="app.deleteTask('${t.id}')" style="padding: 4px 8px;">✕</button>
-            </div>
-          `).join("")}
-
-          <div class="task-add">
-            <input type="text" placeholder="Новая задача..."
-              value="${state.newTaskText}"
-              onchange="app.setNewTask(this.value)"
-              onkeypress="if(event.key==='Enter') app.addTask()">
-            <button class="btn primary" onclick="app.addTask()">+</button>
-          </div>
-
-          ${doneTasks.length > 0 ? `
-            <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #1d2a40;">
-              <div style="font-size: 11px; color: #6d7f9b; margin-bottom: 8px;">Завершено (${doneTasks.length})</div>
-              ${doneTasks.map(t => `
-                <div class="task done">
-                  <input type="checkbox" class="task-check on" checked onchange="app.toggleTask('${t.id}')">
-                  <div class="task-title">${t.text}</div>
-                </div>
-              `).join("")}
-            </div>
-          ` : ""}
-        </div>
-      `;
+    if (!ok && st.onFail) st.onFail(key);
+    return ok;
+  },
+  async del(key) {
+    const old = await backend.get(key);
+    if (chunking && old && old.startsWith("@C:")) {
+      const n = parseInt(old.slice(3), 10) || 0;
+      for (let i = 0; i < n; i++) await backend.del(key + "@" + i);
     }
+    return backend.del(key);
+  },
+  async keys(prefix) {
+    const all = await backend.keys();
+    return all.filter((k) => k.startsWith(prefix) && k.indexOf("@") === -1);
+  },
+};
 
-    // ============ APP API ============
-    window.app = {
-      switchTab(tab) {
-        state.tab = tab;
-        render();
-      },
-      addPatient,
-      selectPatient,
-      openVitEdit() {
-        openVitEdit();
-        render();
-      },
-      cancelVitEdit() {
-        state.showVitEdit = false;
-        render();
-      },
-      setVitForm(field, value) {
-        state.vitForm[field] = value;
-      },
-      updatePatientVitals() {
-        updatePatientVitals();
-      },
-      addTask,
-      toggleTask,
-      toggleTaskUrgent,
-      deleteTask,
-      setNewTask(val) {
-        state.newTaskText = val;
-      },
-    };
+async function initBackend() {
+  if (tg && tg.CloudStorage && tg.initData && tg.isVersionAtLeast && tg.isVersionAtLeast("6.9")) {
+    const ok = await cloudRaw.set("__probe", String(Date.now()));
+    if (ok) { backend = cloudRaw; backendName = "облако Telegram — синхронизируется между устройствами"; chunking = true; return true; }
+  }
+  backend = localRaw; chunking = false;
+  backendName = "браузер (localStorage) — данные хранятся на этом устройстве";
+  return localRaw.set("__probe", String(Date.now()));
+}
 
-    // ============ INITIALIZATION ============
-    loadData();
-  </script>
+/* ================= Утилиты ================= */
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const todayKey = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+const daysSince = (k) => { if (!k) return null; const a = new Date(k + "T00:00:00"), b = new Date(todayKey() + "T00:00:00"); return Math.round((b - a) / 864e5) + 1; };
+const nowTime = () => { const d = new Date(); return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0"); };
+
+function vitalAlert(v) {
+  if (!v) return {};
+  const hr = parseFloat(v.hr), rr = parseFloat(v.rr), spo2 = parseFloat(v.spo2);
+  let sys = NaN;
+  if (v.bp) { const m = String(v.bp).match(/(\d+)/); if (m) sys = parseFloat(m[1]); }
+  return {
+    bp: !isNaN(sys) && (sys < 90 || sys > 180),
+    hr: !isNaN(hr) && (hr < 45 || hr > 120),
+    rr: !isNaN(rr) && (rr > 24 || rr < 8),
+    spo2: !isNaN(spo2) && spo2 < 90,
+  };
+}
+
+const DEFAULT_PARAMS = [
+  { label: "СрАД", ph: "70" }, { label: "ЦВД", ph: "8" }, { label: "T°", ph: "36.6" },
+  { label: "Диурез", ph: "мл/ч" }, { label: "Лактат", ph: "1.2" }, { label: "Глюкоза", ph: "5.5" },
+];
+const LEGACY_KEYS = { map: "СрАД", cvp: "ЦВД", temp: "T°", diur: "Диурез", lact: "Лактат", glu: "Глюкоза" };
+const normExtra = (extra) => {
+  const out = {};
+  for (const k in (extra || {})) { const v = extra[k]; if (v) out[LEGACY_KEYS[k] || k] = v; }
+  return out;
+};
+const INFUSION_CHIPS = ["Норадреналин", "Добутамин", "Дофамин", "Адреналин", "Гепарин", "Нитроглицерин", "Кордарон", "Фуросемид", "Инсулин"];
+const LOG_CAP = 300;
+
+/* ================= Состояние ================= */
+const S = {
+  patients: null, tasks: [], params: DEFAULT_PARAMS.slice(),
+  filter: "all", sync: false, syncMode: null, storageOk: true,
+};
+const ui = { vitEdit: new Set(), extraOpen: new Set(), paramAdd: new Set(), dyn: new Set(),
+  inf: new Set(), noteEdit: new Set(), menu: new Set(), editP: new Set(), done: new Set() };
+const logs = new Map(); // pid -> array|null
+let refocusSel = null;
+let toastTimer = null;
+
+function say(msg) {
+  const slot = document.getElementById("toast-slot");
+  slot.innerHTML = '<div class="toast' + (msg.indexOf("⚠") === 0 ? " err" : "") + '">' + esc(msg) + "</div>";
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { slot.innerHTML = ""; }, 2500);
+}
+
+async function saveKey(key, value) {
+  let ok = await st.set(key, value);
+  if (!ok) { await new Promise((r) => setTimeout(r, 600)); ok = await st.set(key, value); }
+  if (ok) S.storageOk = true;
+  return ok;
+}
+async function persistPatients(note) {
+  const ok = await saveKey("patients", JSON.stringify(S.patients));
+  say(ok ? (note || "Сохранено ✓") : "⚠ Не сохранилось — сделайте экспорт (⇅)");
+}
+async function persistTasks() {
+  const ok = await saveKey("tasks", JSON.stringify(S.tasks));
+  if (!ok) say("⚠ Задача не сохранилась");
+}
+async function persistParams() { await saveKey("custom_vitals", JSON.stringify(S.params)); }
+
+async function loadAll() {
+  const p = await st.get("patients"), t = await st.get("tasks"), cv = await st.get("custom_vitals");
+  try { S.patients = p ? JSON.parse(p) : []; } catch (e) { S.patients = []; }
+  try { S.tasks = t ? JSON.parse(t) : []; } catch (e) { S.tasks = []; }
+  try { if (cv) S.params = JSON.parse(cv); } catch (e) {}
+  logs.clear();
+}
+
+/* ================= Экспорт / импорт ================= */
+async function copyText(t) {
+  try { await navigator.clipboard.writeText(t); return true; }
+  catch (e) {
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = t; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      document.execCommand("copy"); document.body.removeChild(ta);
+      return true;
+    } catch (e2) { return false; }
+  }
+}
+async function buildExport() {
+  const dump = { app: "cardiodoc-lite", version: 1, exportedAt: new Date().toISOString(), data: {} };
+  for (const k of ["patients", "tasks", "custom_vitals"]) { const v = await st.get(k); if (v) dump.data[k] = v; }
+  for (const k of await st.keys("vitlog:")) { const v = await st.get(k); if (v) dump.data[k] = v; }
+  return JSON.stringify(dump);
+}
+async function applyImport(text) {
+  let dump;
+  try { dump = JSON.parse(text); } catch (e) { return { ok: false, msg: "Не удалось прочитать: это не похоже на данные экспорта" }; }
+  if (!dump || !dump.data) return { ok: false, msg: "В тексте нет данных экспорта" };
+  let n = 0;
+  for (const k in dump.data) { if (await st.set(k, dump.data[k])) n++; }
+  return { ok: true, msg: "Загружено разделов: " + n };
+}
+
+/* ================= Разметка ================= */
+function vitCell(cls, label, val, alert) {
+  return '<div class="vit ' + cls + (alert ? " alert" : "") + '"><span class="vit-label">' + label +
+    '</span><span class="vit-val">' + esc(val || "—") + "</span></div>";
+}
+
+function vitalsHtml(p) {
+  const pid = p.id;
+  if (ui.vitEdit.has(pid)) {
+    const v = p.vitals || {};
+    const parts = String(v.bp || "").split("/");
+    const ex = normExtra(v.extra);
+    const extraOpen = ui.extraOpen.has(pid) || Object.keys(ex).length > 0;
+    let h = '<div class="vit-edit" data-pid="' + pid + '"><div class="vit-edit-grid">' +
+      '<label>АД<span class="bp-pair">' +
+      '<input inputmode="numeric" placeholder="120" id="sys-' + pid + '" value="' + esc((parts[0] || "").trim()) + '">' +
+      '<span class="bp-slash">/</span>' +
+      '<input inputmode="numeric" placeholder="80" id="dia-' + pid + '" value="' + esc((parts[1] || "").trim()) + '">' +
+      "</span></label>" +
+      '<label>ЧСС<input inputmode="numeric" placeholder="72" id="hr-' + pid + '" value="' + esc(v.hr || "") + '"></label>' +
+      '<label>ЧД<input inputmode="numeric" placeholder="16" id="rr-' + pid + '" value="' + esc(v.rr || "") + '"></label>' +
+      '<label>SatO₂<input inputmode="numeric" placeholder="97" id="spo2-' + pid + '" value="' + esc(v.spo2 || "") + '"></label>' +
+      "</div>";
+    if (!extraOpen) {
+      h += '<button class="btn ghost tiny" style="margin-top:8px" data-a="extra-open" data-pid="' + pid + '">+ ещё показатели</button>';
+    } else {
+      h += '<div class="vit-edit-grid extra">';
+      for (const prm of S.params) {
+        h += "<label><span class=\"param-head\">" + esc(prm.label) +
+          '<button class="param-x" data-a="param-del" data-pid="' + pid + '" data-label="' + esc(prm.label) + '" title="Убрать показатель">×</button></span>' +
+          '<input inputmode="decimal" class="xin" data-label="' + esc(prm.label) + '" placeholder="' + esc(prm.ph || "") + '" value="' + esc(ex[prm.label] || "") + '"></label>';
+      }
+      h += "</div>";
+      if (ui.paramAdd.has(pid)) {
+        h += '<div class="param-add"><input id="np-param-' + pid + '" placeholder="Название (напр. СИ, ScvO₂…)">' +
+          '<button class="btn small" data-a="param-add-save" data-pid="' + pid + '">+</button></div>';
+      } else {
+        h += '<button class="btn ghost tiny" style="margin-top:8px" data-a="param-add-open" data-pid="' + pid + '">+ свой показатель</button>';
+      }
+    }
+    h += '<div class="vit-edit-actions">' +
+      '<button class="btn ghost" data-a="vit-cancel" data-pid="' + pid + '">Отмена</button>' +
+      '<button class="btn primary" data-a="vit-save" data-pid="' + pid + '">Сохранить</button></div></div>';
+    return h;
+  }
+
+  const v = p.vitals || null;
+  const al = vitalAlert(v);
+  const ex = normExtra(v && v.extra);
+  const exKeys = Object.keys(ex);
+  let h = '<div class="vit-wrap"><div class="vitals-box" data-a="vit-open" data-pid="' + pid + '"><div class="vitals">' +
+    vitCell("bp", "АД", v && v.bp, al.bp) + vitCell("hr", "ЧСС", v && v.hr, al.hr) +
+    vitCell("rr", "ЧД", v && v.rr, al.rr) + vitCell("spo2", "SatO₂", v && v.spo2, al.spo2) +
+    '<div class="vit-time">' + esc(v && v.at ? v.at : "ввести") + "</div></div>";
+  if (exKeys.length) {
+    h += '<div class="vitals second">';
+    for (const k of exKeys) h += '<div class="vit ex"><span class="vit-label">' + esc(k) + '</span><span class="vit-val">' + esc(ex[k]) + "</span></div>";
+    h += "</div>";
+  }
+  h += "</div>";
+  h += '<button class="dyn-toggle" data-a="dyn-toggle" data-pid="' + pid + '">' + (ui.dyn.has(pid) ? "▴ скрыть динамику" : "▾ динамика") + "</button>";
+  if (ui.dyn.has(pid)) {
+    const log = logs.get(pid);
+    h += '<div class="dyn">';
+    if (!log) h += '<div class="dyn-empty">Загрузка…</div>';
+    else if (!log.length) h += '<div class="dyn-empty">Измерений пока нет — сохраните первое, нажав на строку показателей.</div>';
+    else {
+      let prevD = null;
+      for (const e of log) {
+        if (e.d !== prevD) { h += '<div class="dyn-date">' + esc(e.d.split("-").reverse().join(".")) + "</div>"; prevD = e.d; }
+        const a = vitalAlert(e);
+        const exE = normExtra(e.extra);
+        const exStr = Object.keys(exE).map((k) => k + " " + exE[k]).join(" · ");
+        h += '<div class="dyn-row"><span class="dyn-t">' + esc(e.t) + "</span>" +
+          '<span class="dyn-v bp' + (a.bp ? " al" : "") + '">' + esc(e.bp || "—") + "</span>" +
+          '<span class="dyn-v hr' + (a.hr ? " al" : "") + '">' + esc(e.hr || "—") + "</span>" +
+          '<span class="dyn-v rr' + (a.rr ? " al" : "") + '">' + esc(e.rr || "—") + "</span>" +
+          '<span class="dyn-v spo2' + (a.spo2 ? " al" : "") + '">' + esc(e.spo2 || "—") + "</span>" +
+          '<button class="dyn-x" data-a="dyn-del" data-pid="' + pid + '" data-id="' + e.id + '">×</button>' +
+          (exStr ? '<span class="dyn-extra">' + esc(exStr) + "</span>" : "") + "</div>";
+      }
+    }
+    h += "</div>";
+  }
+  h += "</div>";
+  return h;
+}
+
+function infusionsHtml(p) {
+  const pid = p.id;
+  const list = p.infusions || [];
+  let h = '<div class="inf-block"><div class="sec-head"><span class="sec-title">Инфузии' + (list.length ? " · " + list.length : "") +
+    '</span><button class="sec-add" data-a="inf-toggle" data-pid="' + pid + '">' + (ui.inf.has(pid) ? "×" : "+") + "</button></div>";
+  if (list.length) {
+    h += '<div class="inf-pills">';
+    for (const i of list) {
+      h += '<span class="inf-pill"><b>' + esc(i.name) + "</b>" + (i.rate ? " " + esc(i.rate) : "") +
+        '<button class="pill-x" data-a="inf-del" data-pid="' + pid + '" data-id="' + i.id + '">×</button></span>';
+    }
+    h += "</div>";
+  }
+  if (ui.inf.has(pid)) {
+    h += '<div class="inf-add"><div class="inf-chips">';
+    for (const c of INFUSION_CHIPS) h += '<button class="chip mini" data-a="inf-chip" data-pid="' + pid + '" data-name="' + esc(c) + '">' + esc(c) + "</button>";
+    h += "</div><div class=\"inf-add-row\">" +
+      '<input id="inf-name-' + pid + '" placeholder="Препарат">' +
+      '<input id="inf-rate-' + pid + '" placeholder="Доза / скорость">' +
+      '<button class="btn small" data-a="inf-add" data-pid="' + pid + '">+</button></div></div>';
+  }
+  h += "</div>";
+  return h;
+}
+
+function noteHtml(p) {
+  const pid = p.id;
+  if (ui.noteEdit.has(pid)) {
+    return '<div class="note-edit"><textarea id="note-' + pid + '" rows="3" placeholder="Заметка по пациенту…">' + esc(p.note || "") + "</textarea>" +
+      '<div class="vit-edit-actions"><button class="btn ghost" data-a="note-cancel" data-pid="' + pid + '">Отмена</button>' +
+      '<button class="btn primary" data-a="note-save" data-pid="' + pid + '">Сохранить</button></div></div>';
+  }
+  if (!p.note) return '<button class="note-empty" data-a="note-open" data-pid="' + pid + '">+ заметка</button>';
+  return '<div class="note" data-a="note-open" data-pid="' + pid + '"><span class="note-mark">✎</span><span class="note-text">' + esc(p.note) + "</span></div>";
+}
+
+function tasksHtml(p) {
+  const pid = p.id;
+  const my = S.tasks.filter((t) => t.patientId === pid);
+  const open = my.filter((t) => !t.done).sort((a, b) => (b.priority ? 1 : 0) - (a.priority ? 1 : 0));
+  const done = my.filter((t) => t.done);
+  let h = '<div class="tasks">';
+  for (const t of open) {
+    h += '<div class="task' + (t.priority ? " urgent" : "") + '">' +
+      '<button class="task-check" data-a="task-toggle" data-id="' + t.id + '"></button>' +
+      '<span class="task-title" data-a="task-toggle" data-id="' + t.id + '">' + esc(t.title) + "</span>" +
+      '<button class="task-pri' + (t.priority ? " on" : "") + '" data-a="task-pri" data-id="' + t.id + '">!</button></div>';
+  }
+  h += '<div class="task-add"><input id="task-in-' + pid + '" placeholder="Новая задача…" data-enter="task-add" data-pid="' + pid + '">' +
+    '<button class="btn small" data-a="task-add" data-pid="' + pid + '">+</button></div>';
+  if (done.length) {
+    h += '<div class="task-done-block"><button class="task-done-toggle" data-a="done-toggle" data-pid="' + pid + '">✓ выполнено: ' + done.length + " " + (ui.done.has(pid) ? "▴" : "▾") + "</button>";
+    if (ui.done.has(pid)) {
+      for (const t of done) {
+        h += '<div class="task done"><button class="task-check on" data-a="task-toggle" data-id="' + t.id + '"></button>' +
+          '<span class="task-title">' + esc(t.title) + "</span></div>";
+      }
+      h += '<button class="btn ghost tiny" data-a="done-clear" data-pid="' + pid + '">Очистить выполненные</button>';
+    }
+    h += "</div>";
+  }
+  h += "</div>";
+  return h;
+}
+
+function cardHtml(p) {
+  const pid = p.id;
+  const days = daysSince(p.admitDate);
+  const openCount = S.tasks.filter((t) => t.patientId === pid && !t.done).length;
+  const urgentCount = S.tasks.filter((t) => t.patientId === pid && !t.done && t.priority).length;
+  let h = '<div class="card' + (urgentCount ? " has-urgent" : "") + '">' +
+    '<div class="card-head"><div class="card-title"><span class="fio">' + esc(p.fio) + "</span>" +
+    '<span class="meta">' + esc((p.room ? "пал. " + p.room : "") + (days ? (p.room ? " · " : "") + days + "-е сут." : "")) + "</span></div>" +
+    '<div class="card-badges">' +
+    (openCount ? '<span class="badge' + (urgentCount ? " urgent" : "") + '">' + openCount + "</span>" : "") +
+    '<button class="dots" data-a="menu-toggle" data-pid="' + pid + '">⋯</button></div></div>';
+  if (ui.menu.has(pid) && !ui.editP.has(pid)) {
+    h += '<div class="card-menu"><button class="btn ghost tiny" data-a="editp-open" data-pid="' + pid + '">Изменить ФИО / палату</button>' +
+      '<button class="btn danger tiny" data-a="del-patient" data-pid="' + pid + '">Удалить пациента</button></div>';
+  }
+  if (ui.editP.has(pid)) {
+    h += '<div class="card-menu"><input id="ep-fio-' + pid + '" value="' + esc(p.fio) + '" placeholder="ФИО">' +
+      '<input id="ep-room-' + pid + '" value="' + esc(p.room || "") + '" placeholder="Палата">' +
+      '<div class="vit-edit-actions"><button class="btn ghost" data-a="editp-cancel" data-pid="' + pid + '">Отмена</button>' +
+      '<button class="btn primary" data-a="editp-save" data-pid="' + pid + '">Сохранить</button></div></div>';
+  }
+  h += vitalsHtml(p) + infusionsHtml(p) + noteHtml(p) + tasksHtml(p) + "</div>";
+  return h;
+}
+
+function syncHtml() {
+  let h = '<div class="sync"><div class="sync-head"><span class="sec-title">Перенос данных / резервная копия</span>' +
+    '<button class="sec-add" data-a="sync-close">×</button></div>' +
+    '<div class="sync-btns"><button class="btn primary" data-a="exp">Экспорт → скопировать</button>' +
+    '<button class="btn ghost" data-a="imp-mode">Импорт ← вставить</button></div>';
+  if (S.syncMode) {
+    h += '<textarea id="sync-text" rows="4"' + (S.syncMode === "export" ? " readonly" : "") +
+      ' placeholder="' + (S.syncMode === "import" ? "Вставьте сюда текст экспорта…" : "") + '"></textarea>';
+    if (S.syncMode === "import") h += '<button class="btn primary" data-a="imp-load">Загрузить</button>';
+  }
+  h += '<div class="sync-msg" id="sync-msg"></div>' +
+    '<div class="sync-hint">Экспорт совместим со старыми версиями CardioDoc — вставьте сюда текст экспорта из артефакта, и всё перенесётся.</div></div>';
+  return h;
+}
+
+function render() {
+  const app = document.getElementById("app");
+  const openTotal = S.tasks.filter((t) => !t.done).length;
+  const urgentTotal = S.tasks.filter((t) => !t.done && t.priority).length;
+  let h = '<header class="top"><div class="brand">CardioDoc <span class="lite">Lite</span></div><div class="counters">' +
+    '<button class="chip' + (S.filter === "all" ? " on" : "") + '" data-a="filter-all">Задачи: ' + openTotal + "</button>" +
+    '<button class="chip red' + (S.filter === "urgent" ? " on" : "") + '" data-a="filter-urgent"' + (urgentTotal ? "" : " disabled") + ">Срочно: " + urgentTotal + "</button>" +
+    '<button class="chip' + (S.sync ? " on" : "") + '" data-a="sync-toggle" title="Перенос данных">⇅</button></div></header>';
+
+  if (!S.storageOk) {
+    h += '<div class="banner warn">Хранилище недоступно — введённое не сохранится после закрытия. Держите резервную копию через «⇅».</div>';
+  }
+  if (S.sync) h += syncHtml();
+
+  if (S.patients === null) { h += '<div class="empty">Загрузка…</div>'; app.innerHTML = h; return; }
+
+  const shown = S.patients.filter((p) => S.filter === "all" ? true : S.tasks.some((t) => t.patientId === p.id && !t.done && t.priority));
+  h += '<main class="list">';
+  for (const p of shown) h += cardHtml(p);
+  if (!S.patients.length && !ui.menu.has("__new")) h += '<div class="empty">Пациентов пока нет.<br>Добавьте первого — кнопка ниже.</div>';
+  if (S.filter === "urgent" && S.patients.length && !shown.length) h += '<div class="empty">Срочных задач нет 🎉</div>';
+
+  if (ui.menu.has("__new")) {
+    h += '<div class="card new-form"><div class="card-title"><span class="fio">Новый пациент</span></div>' +
+      '<input id="np-fio" placeholder="ФИО" data-enter="np-save"><input id="np-room" placeholder="Палата" data-enter="np-save">' +
+      '<div class="vit-edit-actions"><button class="btn ghost" data-a="np-cancel">Отмена</button>' +
+      '<button class="btn primary" data-a="np-save">Добавить</button></div></div>';
+  } else {
+    h += '<button class="btn add-patient" data-a="np-open">+ Пациент</button>';
+  }
+  h += "</main>";
+  h += '<div class="storage-tag">Хранилище: ' + esc(backendName) + "</div>";
+  app.innerHTML = h;
+
+  if (refocusSel) {
+    const el = document.querySelector(refocusSel);
+    if (el) el.focus();
+    refocusSel = null;
+  }
+}
+
+/* ================= Действия ================= */
+const val = (id) => { const el = document.getElementById(id); return el ? el.value.trim() : ""; };
+const findP = (pid) => S.patients.find((x) => x.id === pid);
+
+async function loadLog(pid) {
+  const raw = await st.get("vitlog:" + pid);
+  let arr = [];
+  try { arr = raw ? JSON.parse(raw) : []; } catch (e) {}
+  logs.set(pid, arr);
+}
+
+const actions = {
+  "filter-all": () => { S.filter = "all"; render(); },
+  "filter-urgent": () => { S.filter = "urgent"; render(); },
+  "sync-toggle": () => { S.sync = !S.sync; S.syncMode = null; render(); },
+  "sync-close": () => { S.sync = false; S.syncMode = null; render(); },
+
+  "exp": async () => {
+    S.syncMode = "export"; render();
+    const json = await buildExport();
+    const ta = document.getElementById("sync-text");
+    if (ta) { ta.value = json; ta.onfocus = () => ta.select(); }
+    const ok = await copyText(json);
+    const m = document.getElementById("sync-msg");
+    if (m) m.textContent = ok ? "Скопировано в буфер обмена ✓" : "Скопируйте текст выше вручную";
+  },
+  "imp-mode": () => { S.syncMode = "import"; render(); },
+  "imp-load": async () => {
+    const ta = document.getElementById("sync-text");
+    const text = ta ? ta.value.trim() : "";
+    if (!text) return;
+    if (!(await ask("Заменить данные на этом устройстве данными из вставленного текста?"))) return;
+    const r = await applyImport(text);
+    if (r.ok) { await loadAll(); say(r.msg + " ✓"); S.sync = false; S.syncMode = null; render(); }
+    else { const m = document.getElementById("sync-msg"); if (m) m.textContent = r.msg; }
+  },
+
+  "np-open": () => { ui.menu.add("__new"); refocusSel = "#np-fio"; render(); },
+  "np-cancel": () => { ui.menu.delete("__new"); render(); },
+  "np-save": async () => {
+    const fio = val("np-fio"); if (!fio) return;
+    const p = { id: uid(), fio, room: val("np-room"), admitDate: todayKey(), tags: [], vitals: null, infusions: [], note: "" };
+    S.patients.push(p);
+    ui.menu.delete("__new"); S.filter = "all"; render();
+    await persistPatients("Пациент «" + fio.split(" ")[0] + "» сохранён ✓");
+  },
+
+  "menu-toggle": (d) => { ui.menu.has(d.pid) ? ui.menu.delete(d.pid) : ui.menu.add(d.pid); ui.editP.delete(d.pid); render(); },
+  "editp-open": (d) => { ui.editP.add(d.pid); render(); },
+  "editp-cancel": (d) => { ui.editP.delete(d.pid); ui.menu.delete(d.pid); render(); },
+  "editp-save": async (d) => {
+    const p = findP(d.pid); if (!p) return;
+    const fio = val("ep-fio-" + d.pid); if (!fio) return;
+    p.fio = fio; p.room = val("ep-room-" + d.pid);
+    ui.editP.delete(d.pid); ui.menu.delete(d.pid); render();
+    await persistPatients();
+  },
+  "del-patient": async (d) => {
+    const p = findP(d.pid); if (!p) return;
+    if (!(await ask("Удалить пациента «" + p.fio + "» и его задачи?"))) return;
+    S.patients = S.patients.filter((x) => x.id !== d.pid);
+    S.tasks = S.tasks.filter((t) => t.patientId !== d.pid);
+    st.del("vitlog:" + d.pid);
+    render();
+    await persistPatients("Пациент удалён"); await persistTasks();
+  },
+
+  "vit-open": (d) => { ui.vitEdit.add(d.pid); render(); },
+  "vit-cancel": (d) => { ui.vitEdit.delete(d.pid); ui.extraOpen.delete(d.pid); ui.paramAdd.delete(d.pid); render(); },
+  "extra-open": (d) => { ui.extraOpen.add(d.pid); render(); },
+  "param-add-open": (d) => { ui.paramAdd.add(d.pid); refocusSel = "#np-param-" + d.pid; render(); },
+  "param-add-save": async (d) => {
+    const name = val("np-param-" + d.pid);
+    ui.paramAdd.delete(d.pid);
+    if (name && !S.params.some((p) => p.label.toLowerCase() === name.toLowerCase())) {
+      S.params.push({ label: name, ph: "" });
+      await persistParams();
+    }
+    render();
+  },
+  "param-del": async (d, ev) => {
+    ev.stopPropagation();
+    S.params = S.params.filter((p) => p.label !== d.label);
+    await persistParams(); render();
+  },
+  "vit-save": async (d) => {
+    const p = findP(d.pid); if (!p) return;
+    const extra = {};
+    document.querySelectorAll('.vit-edit[data-pid="' + d.pid + '"] .xin').forEach((inp) => {
+      const v = inp.value.trim();
+      if (v) extra[inp.getAttribute("data-label")] = v;
+    });
+    /* значения показателей, удалённых из настроек — не теряем */
+    const old = normExtra(p.vitals && p.vitals.extra);
+    for (const k in old) { if (!(k in extra) && !S.params.some((pp) => pp.label === k)) extra[k] = old[k]; }
+    const sys = val("sys-" + d.pid), dia = val("dia-" + d.pid);
+    const bp = sys || dia ? sys + (dia ? "/" + dia : "") : "";
+    const entry = { id: uid(), d: todayKey(), t: nowTime(), bp, hr: val("hr-" + d.pid), rr: val("rr-" + d.pid), spo2: val("spo2-" + d.pid), extra };
+    p.vitals = { bp: entry.bp, hr: entry.hr, rr: entry.rr, spo2: entry.spo2, extra, at: entry.t };
+    ui.vitEdit.delete(d.pid); ui.extraOpen.delete(d.pid); ui.paramAdd.delete(d.pid);
+    if (!logs.has(d.pid)) await loadLog(d.pid);
+    const arr = logs.get(d.pid) || [];
+    arr.unshift(entry);
+    if (arr.length > LOG_CAP) arr.length = LOG_CAP;
+    logs.set(d.pid, arr);
+    render();
+    const ok1 = await saveKey("vitlog:" + d.pid, JSON.stringify(arr));
+    await persistPatients(ok1 ? "Измерение сохранено ✓" : "⚠ Динамика не сохранилась");
+  },
+  "dyn-toggle": async (d) => {
+    if (ui.dyn.has(d.pid)) { ui.dyn.delete(d.pid); render(); return; }
+    ui.dyn.add(d.pid); render();
+    if (!logs.has(d.pid)) { await loadLog(d.pid); render(); }
+  },
+  "dyn-del": async (d) => {
+    const arr = (logs.get(d.pid) || []).filter((x) => x.id !== d.id);
+    logs.set(d.pid, arr);
+    render();
+    await saveKey("vitlog:" + d.pid, JSON.stringify(arr));
+  },
+
+  "inf-toggle": (d) => { ui.inf.has(d.pid) ? ui.inf.delete(d.pid) : ui.inf.add(d.pid); render(); },
+  "inf-chip": (d) => { const el = document.getElementById("inf-name-" + d.pid); if (el) { el.value = d.name; const r = document.getElementById("inf-rate-" + d.pid); if (r) r.focus(); } },
+  "inf-add": async (d) => {
+    const p = findP(d.pid); if (!p) return;
+    const name = val("inf-name-" + d.pid); if (!name) return;
+    p.infusions = p.infusions || [];
+    p.infusions.push({ id: uid(), name, rate: val("inf-rate-" + d.pid) });
+    ui.inf.delete(d.pid); render();
+    await persistPatients();
+  },
+  "inf-del": async (d) => {
+    const p = findP(d.pid); if (!p) return;
+    p.infusions = (p.infusions || []).filter((i) => i.id !== d.id);
+    render();
+    await persistPatients();
+  },
+
+  "note-open": (d) => { ui.noteEdit.add(d.pid); refocusSel = "#note-" + d.pid; render(); },
+  "note-cancel": (d) => { ui.noteEdit.delete(d.pid); render(); },
+  "note-save": async (d) => {
+    const p = findP(d.pid); if (!p) return;
+    const el = document.getElementById("note-" + d.pid);
+    p.note = el ? el.value.trim() : "";
+    ui.noteEdit.delete(d.pid); render();
+    await persistPatients();
+  },
+
+  "task-add": async (d) => {
+    const title = val("task-in-" + d.pid); if (!title) return;
+    S.tasks.push({ id: uid(), patientId: d.pid, title, done: false, priority: false, createdAt: Date.now() });
+    refocusSel = "#task-in-" + d.pid;
+    render();
+    await persistTasks();
+  },
+  "task-toggle": async (d) => {
+    const t = S.tasks.find((x) => x.id === d.id); if (!t) return;
+    t.done = !t.done; render();
+    await persistTasks();
+  },
+  "task-pri": async (d) => {
+    const t = S.tasks.find((x) => x.id === d.id); if (!t) return;
+    t.priority = !t.priority; render();
+    await persistTasks();
+  },
+  "done-toggle": (d) => { ui.done.has(d.pid) ? ui.done.delete(d.pid) : ui.done.add(d.pid); render(); },
+  "done-clear": async (d) => {
+    S.tasks = S.tasks.filter((t) => !(t.patientId === d.pid && t.done));
+    ui.done.delete(d.pid); render();
+    await persistTasks();
+  },
+};
+
+document.addEventListener("click", (ev) => {
+  const el = ev.target.closest("[data-a]");
+  if (!el || el.disabled) return;
+  const a = el.getAttribute("data-a");
+  const d = { pid: el.getAttribute("data-pid"), id: el.getAttribute("data-id"), label: el.getAttribute("data-label"), name: el.getAttribute("data-name") };
+  if (actions[a]) actions[a](d, ev);
+});
+document.addEventListener("keydown", (ev) => {
+  if (ev.key !== "Enter") return;
+  const el = ev.target.closest("[data-enter]");
+  if (!el) return;
+  ev.preventDefault();
+  const a = el.getAttribute("data-enter");
+  const d = { pid: el.getAttribute("data-pid") };
+  if (actions[a]) actions[a](d, ev);
+});
+
+/* ================= Запуск ================= */
+(async () => {
+  S.storageOk = await initBackend();
+  await loadAll();
+  render();
+})();
+</script>
 </body>
 </html>

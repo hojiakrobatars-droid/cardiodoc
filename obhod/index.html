@@ -51,7 +51,7 @@ body{
 }
 body.lock{overflow:hidden}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--paper);z-index:10}
-button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+button{touch-action:manipulation;font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
 button:disabled{opacity:.45;cursor:default}
 button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 h1,h2,h3,p{margin:0}
@@ -667,7 +667,7 @@ function addHTML(p){
     return '<button type="button" class="chip'+(has?' has':'')+'" data-act="addLib" data-id="'+x.id+'">'+(has?I.check:'')+esc(x.t)+'</button>';
   }).join(''):'<span class="hint">Здесь появятся задачи, которые вы впишете сами.</span>';
   return '<div class="addpanel">'
-    +'<form data-form="addTask" class="addrow" autocomplete="off"><input class="inp" id="nt-'+p.id+'" name="t" placeholder="Своя задача…" maxlength="120" enterkeyhint="done" aria-label="Новая задача"><button class="btn primary sm" type="submit">Добавить</button></form>'
+    +'<form data-form="addTask" class="addrow" autocomplete="off"><input class="inp" id="nt-'+p.id+'" name="t" placeholder="Своя задача…" maxlength="120" enterkeyhint="done" aria-label="Новая задача"><button class="btn primary sm" type="button" data-act="submitForm">Добавить</button></form>'
     +'<div class="timerow"><div class="seg" role="group" aria-label="Время для новых задач">'+seg+'</div>'+tbox+'</div>'
     +'<p class="hint">Новые задачи: '+newDueDesc()+'. Вписанные задачи сохраняются в «Свои».</p>'
     +'<div class="gtabs">'+tabs+'</div>'
@@ -784,7 +784,7 @@ function renderTransfer(now){
   }
   h+='<div class="sechead"><h2>Отделения · места</h2><button class="link" data-act="deptEdit">'+(R.deptEdit?'Готово':'Изменить')+'</button></div>';
   h+=S.depts.length?S.depts.map(deptHTML).join(''):'<p class="hint">Отделений нет. Добавьте ниже.</p>';
-  h+='<form class="addd" data-form="addDept" autocomplete="off"><input class="inp" id="nd" name="n" placeholder="Новое отделение" maxlength="24" aria-label="Название нового отделения"><button class="btn primary sm" type="submit">Добавить</button></form>';
+  h+='<form class="addd" data-form="addDept" autocomplete="off"><input class="inp" id="nd" name="n" placeholder="Новое отделение" maxlength="24" aria-label="Название нового отделения"><button class="btn primary sm" type="button" data-act="submitForm">Добавить</button></form>';
   h+='<div class="trfoot"><button class="btn sm" data-act="copyPlan">Копировать план</button>'+(R.confirmDay?'':'<button class="btn sm danger ghost" data-act="askDay">Новый день</button>')+'</div>';
   if(R.confirmDay){
     h+='<div class="confirm"><p>Обнулить места во всех отделениях и убрать из списка переведённых пациентов? Отметки «к переводу» у остальных останутся. Сразу после можно нажать «Вернуть».</p><div class="row"><button class="btn sm" data-act="cancelDay">Отмена</button><button class="btn sm danger" data-act="newDay">Новый день</button></div></div>';
@@ -830,7 +830,7 @@ function patientSheet(){
     +'<div class="pre" id="pe-parse"></div>'
     +'<div class="rowl"><span class="hint">Пол</span><div class="seg" id="pe-sex" role="group" aria-label="Пол">'+sx2('м','Мужской')+sx2('ж','Женский')+'</div></div>'
     +'<div class="warnline" id="pe-warn"></div>'
-    +'<div class="row"><button type="button" class="btn" data-act="closeSheet">Отмена</button><button type="submit" class="btn primary">Сохранить</button></div>'
+    +'<div class="row"><button type="button" class="btn" data-act="closeSheet">Отмена</button><button type="button" class="btn primary" data-act="submitForm">Сохранить</button></div>'
     +'</div></form>';
 }
 function renderParse(){
@@ -881,12 +881,12 @@ function libHTML(){
       }).join(''):'<span class="hint">пусто</span>')+'</div>';
     });
     h+='<form data-form="libAdd" class="libadd" autocomplete="off"><input class="inp" id="la-in" name="t" placeholder="Новая задача…" maxlength="120" aria-label="Название задачи"><select class="inp" name="g" aria-label="Группа">'
-      +GROUPS.map(function(g){return '<option'+(g===R.libGroup?' selected':'')+'>'+esc(g)+'</option>';}).join('')+'</select><button class="btn primary sm" type="submit">Добавить</button></form>';
+      +GROUPS.map(function(g){return '<option'+(g===R.libGroup?' selected':'')+'>'+esc(g)+'</option>';}).join('')+'</select><button class="btn primary sm" type="button" data-act="submitForm">Добавить</button></form>';
   }else{
     h+='<div class="chips">'+(S.lib.phr.length?S.lib.phr.map(function(x){
       return '<span class="chip edit">'+esc(x.t)+'<button data-act="libdel" data-kind="phr" data-id="'+x.id+'" aria-label="Удалить фразу '+esc(x.t)+'">'+I.x+'</button></span>';
     }).join(''):'<span class="hint">пусто</span>')+'</div>'
-    +'<form data-form="libAdd" class="libadd" autocomplete="off"><input class="inp" id="la-in" name="t" placeholder="Новая фраза…" maxlength="120" aria-label="Текст фразы"><button class="btn primary sm" type="submit">Добавить</button></form>';
+    +'<form data-form="libAdd" class="libadd" autocomplete="off"><input class="inp" id="la-in" name="t" placeholder="Новая фраза…" maxlength="120" aria-label="Текст фразы"><button class="btn primary sm" type="button" data-act="submitForm">Добавить</button></form>';
   }
   return h;
 }
@@ -949,6 +949,7 @@ function addTask(p,text){
   return true;
 }
 function savePatient(){
+  if(!R.sheet||R.sheet.type!=='patient')return;
   var r=parseEntry($('#pe-in').value);
   if(!r.name){$('#pe-warn').textContent='Введите фамилию, например: Иванов 65, 3';return;}
   var sex=R.sheet.sex||'';
@@ -985,7 +986,8 @@ document.addEventListener('click',function(e){
   var b=e.target.closest('[data-act]');
   if(!b)return;
   var act=b.dataset.act;
-  if(act==='overlay'){if(e.target===b)closeSheet();return;}
+  if(act==='overlay'){if(e.target===b&&R.downOverlay)closeSheet();return;}
+  if(act==='submitForm'){e.preventDefault();handleForm(b.closest('form'));return;}
   var card=b.closest('[data-pid]');
   var p=card?findP(card.dataset.pid):null;
   var li=b.closest('[data-tid]');
@@ -1118,6 +1120,14 @@ document.addEventListener('submit',function(e){
   var f=e.target.closest('form[data-form]');
   if(!f)return;
   e.preventDefault();
+  handleForm(f);
+});
+function handleForm(f){
+  try{handleFormInner(f);}
+  catch(err){toast('Ошибка: '+(err&&err.message||err)+'. Сообщите разработчику.',false,true);}
+}
+function handleFormInner(f){
+  if(!f)return;
   var kind=f.dataset.form;
   if(kind==='patient'){savePatient();return;}
   if(kind==='addTask'){
@@ -1154,7 +1164,8 @@ document.addEventListener('submit',function(e){
     }
     save();R.focusSheet='la-in';renderSheet(true);render();
   }
-});
+}
+document.addEventListener('pointerdown',function(e){R.downOverlay=!!(e.target&&e.target.classList&&e.target.classList.contains('overlay'));},true);
 document.addEventListener('keydown',function(e){if(e.key==='Escape'&&R.sheet)closeSheet();});
 
 /* ---------- clock and init ---------- */

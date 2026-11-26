@@ -130,7 +130,7 @@ i{font-style:normal}
 .tag.ghost{border-style:dashed}
 
 .tasks{margin-top:4px}
-.task{display:grid;grid-template-columns:22px minmax(0,1fr) auto 24px 24px;gap:5px;align-items:center;padding:3px 0;border-top:1px solid var(--stroke)}
+.task{display:grid;grid-template-columns:22px minmax(0,1fr) 24px 24px;gap:5px;align-items:center;padding:3px 0;border-top:1px solid var(--stroke)}
 .chk{position:relative;width:21px;height:21px;border:1.8px solid var(--stroke-2);border-radius:6px;display:grid;place-items:center;color:transparent}
 .chk::before{content:"";position:absolute;inset:-8px}
 .chk svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}
@@ -360,8 +360,8 @@ var I={
   trash:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>',
   ck:'<svg class="ck" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'
 };
-var SORTLBL={added:'по добавлению',bed:'по койке',priority:'по срочности',time:'по времени'};
-var FILTERS=[['all','Все','all'],['urgent','Срочные','flag'],['overdue','Просрочено','clock'],['open','Есть задачи','todo'],['done','Выполнено','done'],['transfer','К переводу','swap']];
+var SORTLBL={added:'по добавлению',bed:'по койке',priority:'по срочности'};
+var FILTERS=[['all','Все','all'],['urgent','Срочные','flag'],['open','Есть задачи','todo'],['done','Выполнено','done'],['transfer','К переводу','swap']];
 
 var GROUPS=['Исследования','Консультации','Лаборатория','Контроль','Лечение','Свои'];
 var DEF_TASKS={
@@ -381,6 +381,8 @@ function normalize(s){
   s.ui=s.ui||{sort:'added',filter:'all'};
   if(!s.ui.v2){s.ui.sort='added';s.ui.v2=1;}
   if(!SORTLBL[s.ui.sort])s.ui.sort='added';
+  if(s.ui.filter==='overdue')s.ui.filter='all';
+  s.patients.forEach(function(p){(p.tasks||[]).forEach(function(t){t.due=null;});});
   s.ts=s.ts||0;
   s.patients.forEach(function(p){
     if(p.sex!=='м'&&p.sex!=='ж')p.sex='';
@@ -675,7 +677,7 @@ function renderDrawer(now){
     h+=ditem('filter',f[0],f[2],f[1],'<b'+(crit?' class="crit"':'')+'>'+n+'</b>',pat&&S.ui.filter===f[0]);
   });
   h+='<div class="dsep"></div><div class="dlabel">Порядок</div>';
-  [['added','По добавлению','added'],['bed','По койке','bed'],['priority','По срочности','alert'],['time','По времени задач','clock']].forEach(function(s){
+  [['added','По добавлению','added'],['bed','По койке','bed'],['priority','По срочности','alert']].forEach(function(s){
     h+=ditem('sort',s[0],s[2],s[1],I.ck,S.ui.sort===s[0]);
   });
   h+='<div class="dsep"></div>';
@@ -709,7 +711,6 @@ function taskHTML(t,now){
   return '<li class="'+cls+'" data-tid="'+t.id+'">'
     +'<button class="chk" data-act="tick" role="checkbox" aria-checked="'+t.done+'" aria-label="Выполнено: '+esc(t.text)+'">'+I.check+'</button>'
     +'<span class="tx">'+esc(t.text)+'</span>'
-    +'<input class="tm'+(t.due?'':' empty')+'" type="time" value="'+(t.due?hm(t.due):'')+'" aria-label="Время: '+esc(t.text)+'">'
     +'<button class="mini urg-btn'+(t.urgent?' on':'')+'" data-act="turg" aria-pressed="'+t.urgent+'" aria-label="Срочно">!</button>'
     +'<button class="mini" data-act="tdel" aria-label="Удалить задачу">'+I.x+'</button>'
     +'</li>';
@@ -733,8 +734,7 @@ function addHTML(p){
   }).join(''):'<span class="hint">Здесь появятся задачи, которые вы впишете сами.</span>';
   return '<div class="addpanel">'
     +'<form data-form="addTask" class="addrow" autocomplete="off"><input class="inp" id="nt-'+p.id+'" name="t" placeholder="Своя задача…" maxlength="120" enterkeyhint="done" aria-label="Новая задача"><button class="btn primary sm" type="button" data-act="submitForm">Добавить</button></form>'
-    +'<div class="timerow"><div class="seg" role="group" aria-label="Время для новых задач">'+seg+'</div>'+tbox+'</div>'
-    +'<p class="hint">Новые задачи: '+newDueDesc()+'. Вписанные задачи сохраняются в «Свои».</p>'
+    +'<p class="hint">Вписанные задачи сохраняются в «Свои».</p>'
     +'<div class="gtabs">'+tabs+'</div>'
     +'<div class="chips">'+chips+'</div>'
     +'</div>';
@@ -1000,6 +1000,7 @@ function copyText(text,label){
 
 /* ---------- actions ---------- */
 function newDue(){
+  return null;
   var m=R.addTime.mode;
   if(m==='none')return null;
   if(m==='custom')return R.addTime.val?resolveDue(R.addTime.val):null;

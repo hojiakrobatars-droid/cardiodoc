@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <title>Лист обхода</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Обход">
+<meta name="theme-color" content="#14163C">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
@@ -1267,6 +1274,18 @@ function init(){
   window.addEventListener('pagehide',function(){persistLocal();flushCloud();});
 }
 init();
+})();
+</script>
+<script>
+(function(){
+  /* офлайн-режим для приложения на экране «Домой»; в Telegram не включается */
+  try{
+    if(!('serviceWorker' in navigator))return;
+    if(window.Telegram&&window.Telegram.WebApp&&window.Telegram.WebApp.initData)return;
+    if(!/^https:|^http:\/\/(localhost|127\.0\.0\.1)/.test(location.href))return;
+    window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});
+    if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(function(){});
+  }catch(e){}
 })();
 </script>
 </body>
